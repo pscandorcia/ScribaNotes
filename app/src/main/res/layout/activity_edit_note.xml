@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/note_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#FFFFFF">
+
+        <TextView
+            android:id="@+id/note_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text = "current filename"
+            android:maxLines="1"
+            android:textSize="10sp"
+            />
+
+        <com.materialnotes.view.VerticalScrollView
+            android:id="@+id/editNoteScrollView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbarStyle="outsideInset"
+            android:fillViewport="true">
+
+            <EditText
+                android:id="@+id/note_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:textIsSelectable="true"
+                android:text = "@string/content_test"
+                android:paddingLeft="20dp"
+                android:paddingRight="20dp"
+                android:inputType="textMultiLine|textNoSuggestions"
+                />
+        </com.materialnotes.view.VerticalScrollView>
+
+        <!-- esto estaba dentro del EditText
+        android:longClickable="true"
+        android:scrollbarAlwaysDrawVerticalTrack="true"
+        android:scrollHorizontally="false"
+        android:hint = "@string/hint_note_content"
+        android:gravity="start"
+        android:background="#00000000"
+        android:inputType="textMultiLine|textNoSuggestions|"-->
+    </LinearLayout>
+
+    <com.shamanland.fab.FloatingActionButton
+        android:id="@+id/popup_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="16dp"
+
+        android:src="@drawable/selection_icon" />
+		
+    <com.shamanland.fab.FloatingActionButton
+        android:id="@+id/selections_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/popup_button"
+        android:layout_toLeftOf="@+id/popup_button"
+        android:src="@drawable/ic_selecteds_button_icon"
+        android:layout_marginRight="8dp"
+        android:onClick="showNotes"/>
+
+    <TextView
+        android:id="@+id/selection_start_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start: 0"
+        android:background="@color/yellow_circle"
+        android:visibility="invisible"
+        />
+
+    <TextView
+        android:id="@+id/selection_end_position"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="End: 0"
+        android:layout_toRightOf="@id/selection_start_position"
+        android:background="@color/yellow_circle"
+        android:visibility="invisible"
+        />
+    <Button
+        android:id="@+id/buttonDeleteRefFile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete fileref"
+        android:onClick="deleteRefFile"
+        android:layout_alignParentBottom="true"
+        android:visibility="invisible"
+        android:color="#55AAAAAA"/>
+
+    <Button
+        android:id="@+id/buttonScrollLock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="lock Scroll"
+        android:onClick="lockScrollTest"
+        android:layout_alignParentBottom="true"
+        android:visibility="invisible"/>
+
+    <Button
+        android:id="@+id/buttonOpenFile"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Open file"
+        android:onClick="openFile"
+        android:layout_above="@id/buttonDeleteRefFile"
+        android:visibility="invisible"/>
+
+</RelativeLayout>
