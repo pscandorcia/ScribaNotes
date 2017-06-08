@@ -1,5 +1,4 @@
-
-/**
+**
  * New activity and uses
  *
  * by Pablo Sotelo
@@ -11,6 +10,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -39,12 +39,17 @@ import android.widget.Toast;
 
 import com.materialnotes.R;
 import com.materialnotes.util.FileRef;
+import com.materialnotes.util.FileRefHeader;
+import com.materialnotes.util.FilenameUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+
+import roboguice.activity.event.OnPauseEvent;
 
 public class ActivityColorFilterNotes extends AppCompatActivity {
 
@@ -53,10 +58,11 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
     public static final String StartPosition ="com.example.ScribaNotes.StartPosition";
     public static final String EndtPosition ="com.example.ScribaNotes.EndtPosition";
     public static final String CardColor="com.example.ScribaNotes.Color";
+    public static final String CardId = "com.example.ScribaNotes.CardId";
 
     String colorType;
     int idCard=0;
-    int counterColorFilter = 1;
+    int counterColorFilter;
     private Context mContext;
     private ScrollView scrollView;
     private Button colorButton;
@@ -96,6 +102,9 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
 
         createCardsFromFile();
 
+        //getSupportActionBar().setSubtitle(FilenameUtils.getShortFilenameWithoutExtension(Cfg.currentProjectFilename));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
         //ScrollView functionality
         scrollView.post(new Runnable() {
             public void run() {
@@ -104,12 +113,20 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         });
     }
 
-    // Method that load every cardview
+    @Override
+    protected void onResume() {
+        super.onResume();
+        list.clear();
+        references.clear();
+        lLinearLayout.removeAllViews();
+        createCardsFromFile();
+        counterColorFilter=1;
+    }
+    // Method that load every cardview, filter color, headers....
     private void createCardsFromFile(){
+        counterColorFilter=1;
         try {
             int refCount = FileRef.count();
-
-            //Test
             Log.d("PSL:applyStyles...","Numero de registros: "+String.valueOf(refCount));
             for (int i=1; i<=refCount; i++) {
                 FileRef fr = new FileRef();
@@ -122,25 +139,41 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
                         references.add(fr);
                         if (fr.color == -256) {
                             colorType="Yellow";
+                            getSupportActionBar().setSubtitle(FileRefHeader.getCurrentProjectYellowMeaning());
                         } else if (fr.color == -16711936) {
                             colorType="Green";
+                            getSupportActionBar().setSubtitle(FileRefHeader.getCurrentProjectGreenMeaning());
                         } else if (fr.color == -16711681) {
                             colorType = "Blue";
+                            getSupportActionBar().setSubtitle(FileRefHeader.getCurrentProjectBlueMeaning());
 
                         }else{
                             colorButton.setBackgroundColor(Color.WHITE);
                         }
+                        //Title depends on a color selection
                         getSupportActionBar().setTitle(colorType+" Notes");
+                        //Side color
                         colorButton = (Button) findViewById(R.id.colorButton);
                         colorButton.setBackgroundColor((fr.color));
-
                     }
                 }
+            }
+            if (list.size()==0) {
+                noNotes.setVisibility(View.VISIBLE);
+                colorButton.setVisibility(View.INVISIBLE);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
+
+    //Method that transforms px into dp
+    public static int dpToPx(int dp)
+    {
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
+    }
+
 
     //Method to create cardViews from references
     private void createCardFromReference(final FileRef fr) {
@@ -157,26 +190,22 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         //Turn on Padding setting
         card.setUseCompatPadding(true);
 
-        //Margin values
-        params.setMargins(25,30,25,30);
-        params.height=410;
 
-
+        //Cardview params (margins.....)
+        params.setMargins(dpToPx(12), dpToPx(16), dpToPx(10), dpToPx(8));
+        params.height =dpToPx(160);
         card.setLayoutParams(params);
+        card.setPaddingRelative(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20));
 
-        //New parameters
-        card.setPaddingRelative(8,8,8,8);
+        //Set CardView corner radius
+        card.setRadius(dpToPx(5));
 
-        // Set CardView corner radius
-        card.setRadius(9);
+        //Set the CardView maximum elevation
+        card.setMaxCardElevation(dpToPx(6));
 
-        // Set the CardView maximum elevation
-        card.setMaxCardElevation(15);
+        //Set CardView elevation
+        card.setCardElevation(dpToPx(5));
 
-        // Set CardView elevation
-        card.setCardElevation(13);
-
-        //load new color Layout
         //CardView Header params
         RelativeLayout cabecera = new RelativeLayout(getApplicationContext());
 
@@ -185,7 +214,7 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
                         RelativeLayout.LayoutParams.WRAP_CONTENT)
 
                 );
-        ParamsCabecera.height=45;
+        ParamsCabecera.height=dpToPx(20);
 
         //Switch color from FileRef
         switch (fr.style){
@@ -212,12 +241,12 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         // Initialize a card number in the CardView
         TextView cardNumber = new TextView(mContext);
         cardNumber.setLayoutParams(params);
-        //tv.setTypeface(null, Typeface.BOLD);
+
         cardNumber.setText("Note " + String.valueOf(counterColorFilter));
         cardNumber.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        cardNumber.setPadding(50,20,0,0);
+        cardNumber.setPadding(dpToPx(6), dpToPx(8), dpToPx(0), dpToPx(0));
         cardNumber.setTextColor(Color.BLACK);
-        // Put the TextView in CardView
+        // Put the TextView in the CardView
         card.addView(cardNumber);
 
         //Substring the last "/" and take File name
@@ -234,8 +263,8 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         TextView cardTitle = new TextView(mContext);
         cardTitle.setLayoutParams(params);
         cardTitle.setText(str);
-        cardTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        cardTitle.setPadding(235,25,0,0);
+        cardTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+        cardTitle.setPadding(dpToPx(80),dpToPx(10),dpToPx(0),dpToPx(0));
         cardTitle.setTextColor(Color.BLACK);
         // Put the TextView in CardView
         card.addView(cardTitle);
@@ -248,28 +277,28 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         date.setLayoutParams(params);
         date.setText(newFormat);
         date.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-        date.setPadding(790,30,0,0);
+        date.setPadding(dpToPx(241), dpToPx(10), dpToPx(0), dpToPx(0));
         date.setTextColor(Color.GRAY);
-        // Put the TextView in CardView
+
+        // Put date in the CardView
         card.addView(date);
 
         //Initialize the text Selection
-        TextView textPrueba = new TextView(mContext);
-        textPrueba.setLayoutParams(params);
+        TextView textSelection = new TextView(mContext);
+        textSelection.setLayoutParams(params);
         String textNote = readTextRangeFromFile(fr.start, fr.end, fr.filename.trim());
-        textPrueba.setText(textNote);
-        // textPrueba.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15); //Freeze app
-        textPrueba.setPadding(50,100,40,70);
-        textPrueba.setTextColor(Color.GRAY);
+        textSelection.setText(textNote);
+        textSelection.setPadding(dpToPx(20), dpToPx(37), dpToPx(6), dpToPx(6));
+        textSelection.setTextColor(Color.GRAY);
 
         // Put the TextView in CardView
-        card.addView(textPrueba);
+        card.addView(textSelection);
 
         //Set an own Id to every single cardView
         idCard++;
         card.setId(idCard);
 
-        //---------------------==WORK IN PROGRESS==---------------------------------------------
+
         //Convert a cardview into a clickable object
         card.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -283,14 +312,15 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
                 int message02=(fr.start);
                 int message03=(fr.end);
                 int message04=(fr.color);
-                //String message02= toIntfr.start);
-                Log.i("TAG","Nombre del archivo " + message.toString());
-                // String message= textPrueba.getText().toString();
-                //String message =("que pasa tiu").toString();
+                int message05 = (fr.id);
+
+                Log.i("TAG","Name " + message.toString());
+
                 intent.putExtra(FileText, message);
                 intent.putExtra(StartPosition, message02);
                 intent.putExtra(EndtPosition, message03);
                 intent.putExtra(CardColor,message04);
+                intent.putExtra(CardId, message05);
                 startActivity(intent);
             }
 
@@ -300,9 +330,9 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         lLinearLayout.addView(card);
 
         //Add the card into the array list and plus counter
-        list.add(card);
+        Log.i("TAG", "contador" + counterColorFilter);
         counterColorFilter++;
-
+        list.add(card);
 
         //Delete cardview by longclick
         card.setOnLongClickListener(new View.OnLongClickListener() {
@@ -312,12 +342,11 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
                 card.setVisibility(View.VISIBLE);
                 card.setAlpha(0.0f);
 
-                // Start the animation
+                // Animation
                 card.animate()
                         .translationX(card.getWidth())
                         .alpha(1.0f);
                 Handler h = new Handler();
-
                 h.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -336,7 +365,6 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
                 return true;
             }
         });
-
     }
 
     //ActionBar uses
@@ -344,46 +372,59 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.show_notes, menu);
-
         return true;
     }
 
-    //Clickable usages.../-----IF YOU WANT TO PUt ANY BUTTON OR USAGE MORE JUST PUT MORE CASES----
+    //Clickable usages in ActionBar.../
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             //Export into an email
             case R.id.export:
-                try {
-                    sendEmail(FileRef.exportRefs(references));
-                    //Toast.makeText(getApplicationContext(), "File Export Done!", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (list.size()==0) {
+                    Toast.makeText(getApplicationContext(), "No "+colorType+ " notes to Export", Toast.LENGTH_SHORT).show();
+                } else {
+                    try {
+                        sendEmail(FileRef.exportRefs(references));
+                        //Toast.makeText(getApplicationContext(), "File Export Done!", Toast.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
+            case android.R.id.home:
+                onBackPressed();
+                return true;
             //delete function, only colored selection cards
             case R.id.delete:
-                new AlertDialog.Builder(this)
-                        .setMessage("Are you sure to delete permanently all the " + colorType + " references?")
-                        .setCancelable(false)
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
+                if (list.size()==0) {
+                    Toast.makeText(getApplicationContext(), "No "+colorType+ " Notes to Delete", Toast.LENGTH_SHORT).show();
+                } else {
 
-                lLinearLayout.removeAllViews();
-                for (int i=0; i<references.size();i++){
-                    FileRef.deleteId(references.get(i).id);
+                    new AlertDialog.Builder(this)
+                            .setMessage("Are you sure to delete permanently all the " + colorType + " references?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                    lLinearLayout.removeAllViews();
+                                    list.removeAll(list);
+                                    for (int i = 0; i < references.size(); i++) {
+                                        FileRef.deleteId(references.get(i).id);
+
+                                    }
+                                    //FileRef.deleteRefsFile(fr.id);
+                                    noNotes.setVisibility(View.VISIBLE);
+                                    colorButton.setVisibility(View.INVISIBLE);
+                                }
+                            })
+                            .setNegativeButton("No", null)
+                            .show();
+                    break;
                 }
-                //FileRef.deleteRefsFile(fr.id);
-                                noNotes.setVisibility(View.VISIBLE);
-                                colorButton.setVisibility(View.INVISIBLE);
         }
-    })
-            .setNegativeButton("No", null)
-                        .show();
-                break;
-        }
-
-        return true;
+                return true;
     }
+
 
     //Read from File method
     private String readTextRangeFromFile(int start, int end, String filename) {
@@ -408,33 +449,47 @@ public class ActivityColorFilterNotes extends AppCompatActivity {
         fullText=fullText.substring(start,end);
         return fullText;
     }
-    private void sendEmail(String body) {
-        Log.d("eMail","Coming sendEmail");
-        if (body.equals("ERROR")){
-            Toast.makeText(mContext, "ERROR SENDING MESSAGE", Toast.LENGTH_SHORT).show();
-            Log.d("eMail","ERROR");
-        }else{
-            Log.d("eMail","Body different to ERROR");
 
-            String[] TO = {"david@dublindesignstudio.com"};
-            String[] CC = {"david@dublindesignstudio.com"};
+    //Export
+    private void sendEmail(String body) {
+        Log.d("eMail", "Coming sendEmail");
+        if (body.equals("ERROR")) {
+            Toast.makeText(mContext, "ERROR SENDING MESSAGE", Toast.LENGTH_SHORT).show();
+            Log.d("eMail", "ERROR");
+        } else {
+            Log.d("eMail", "Body different to ERROR");
+            String[] types = {
+                    "message/rfc822",
+                    "text/html",
+                    "text/plain"};
 
             Intent emailIntent = new Intent(Intent.ACTION_SEND);
             emailIntent.setData(Uri.parse("mailto:"));
-            emailIntent.setType("text/plain");
+            emailIntent.setType(types[1]);
+            File file = new File(Cfg.APP_DATA_FOLDER, "ScribaExportedNotes.html");
+            try {
+                FileWriter fw = new FileWriter(file);
+                Log.d("html", "Escribiendo fichero: "+body);
+                fw.write(body);
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            Log.d("eMail","Saving the putExtras...");
+            if (!file.exists() || !file.canRead()) {
+                Toast.makeText(this, "Attachment Error", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            Uri uri = Uri.parse("file://" + file);
+            emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
-            emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
-            emailIntent.putExtra(Intent.EXTRA_CC, CC);
+            Log.d("gMail", body);
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Exported Notes");
-            emailIntent.putExtra(Intent.EXTRA_TEXT, body);
 
             try {
-                Log.d("eMail","Starting the new activity.");
+                Log.d("eMail", "Starting the new activity.");
                 startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-                finish();
-
             } catch (android.content.ActivityNotFoundException ex) {
                 Toast.makeText(this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
             }
