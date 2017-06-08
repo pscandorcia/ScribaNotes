@@ -4,6 +4,7 @@ import android.app.ActionBar;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -30,14 +31,23 @@ import android.widget.Toast;
 import com.google.android.gms.wearable.DataApi;
 import com.materialnotes.R;
 import com.materialnotes.util.FileRef;
+import com.materialnotes.util.FilenameUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+
+/**
+ * New activity and uses
+ * <p>
+ * by Pablo Sotelo
+ */
 public class ShowNotesActivity extends AppCompatActivity {
 
     //Variables that we send to the next Activity
@@ -45,6 +55,7 @@ public class ShowNotesActivity extends AppCompatActivity {
     public static final String StartPosition = "com.example.ScribaNotes.StartPosition";
     public static final String EndtPosition = "com.example.ScribaNotes.EndtPosition";
     public static final String CardColor = "com.example.ScribaNotes.Color";
+    public static final String CardId = "com.example.ScribaNotes.CardId";
 
     static int typeColor = 0;
     int yellowCounter = 0;
@@ -67,35 +78,27 @@ public class ShowNotesActivity extends AppCompatActivity {
     ArrayList<CardView> list;
     ArrayList<FileRef> references= new ArrayList<FileRef>();
 
-
-    /**
-     * New activity and uses
-     * <p>
-     * by Pablo Sotelo
-     */
-
     //Programattely cardview creation
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_show_notes);
 
-        // Get de ScrollView
+        // Get the ScrollView
         scrollView = (ScrollView) findViewById(R.id.scrollView);
-
         // Get the application context
         mContext = getApplicationContext();
-
         // Get the widgets reference from XML layout
         lLinearLayout = (LinearLayout) findViewById(R.id.cardLayout);
-
         noNotes= (TextView) findViewById(R.id.noNotes);
-
         //Create a new cardView Array
         list = new ArrayList<CardView>();
 
         createCardsFromFile();
 
+        //Header Subtitle and back
+        getSupportActionBar().setSubtitle(FilenameUtils.getShortFilenameWithoutExtension(Cfg.currentProjectFilename));
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         //ScrollView functionality
         scrollView.post(new Runnable() {
@@ -103,14 +106,11 @@ public class ShowNotesActivity extends AppCompatActivity {
                 scrollView.fullScroll(ScrollView.FOCUS_UP);
             }
         });
-
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-
         list.clear();
         references.clear();
         lLinearLayout.removeAllViews();
@@ -127,10 +127,7 @@ public class ShowNotesActivity extends AppCompatActivity {
     private void createCardsFromFile() {
         try {
             int refCount = FileRef.count();
-            //test
-            Log.d("PSL:applyStyles...", "Numero de registros: " + String.valueOf(refCount));
             idCard = 0;
-
             for (int i = 1; i <= refCount; i++) {
                 FileRef fr = new FileRef();
                 fr = FileRef.readId(i);
@@ -159,15 +156,14 @@ public class ShowNotesActivity extends AppCompatActivity {
             blueButton = (Button) findViewById(R.id.blueButton);
             blueButton.setText(String.valueOf(blueCounter));
             blueButton.setTextSize(16);
-
-//            //            ----------Work in progress----------------------
+            //Set buttons enabled/disabled
             if (yellowCounter == 0)
                 yellowButton.setEnabled(false);
              if (greenCounter==0)
                 greenButton.setEnabled(false);
              if (blueCounter==0)
                 blueButton.setEnabled(false);
-
+            //If no notes in screen, turn on visibility on the Nonotes view
             if (yellowCounter==0 && greenCounter==0 && blueCounter==0)
                 noNotes.setVisibility(View.VISIBLE);
 
@@ -176,10 +172,18 @@ public class ShowNotesActivity extends AppCompatActivity {
         }
     }
 
-    //Method that creates references
+    //Method that transforms px into dp
+    public static int dpToPx(int dp)
+    {
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
+    }
+
+
+        //Method that creates references
     private void createCardFromReference(final FileRef fr) {
+
+
         // Initialize a new CardView
-        //for (int i=0;i<;i++){
         final CardView card = new CardView(mContext);
 
         // Set the CardView layoutParams
@@ -192,31 +196,31 @@ public class ShowNotesActivity extends AppCompatActivity {
         card.setUseCompatPadding(true);
 
         //Cardview params (margins.....)
-        params.setMargins(25, 30, 25, 30);
-        params.height = 410;
+        params.setMargins(dpToPx(12), dpToPx(16), dpToPx(10), dpToPx(8));
+        params.height =dpToPx(160);
         card.setLayoutParams(params);
-        card.setPaddingRelative(8, 8, 8, 8);
+        card.setPaddingRelative(dpToPx(20), dpToPx(20), dpToPx(20), dpToPx(20));
 
-        // Set CardView corner radius
-        card.setRadius(9);
+        //Set CardView corner radius
+        card.setRadius(dpToPx(5));
 
-        // Set the CardView maximum elevation
-        card.setMaxCardElevation(15);
+        //Set the CardView maximum elevation
+        card.setMaxCardElevation(dpToPx(6));
 
-        // Set CardView elevation
-        card.setCardElevation(13);
+        //Set CardView elevation
+        card.setCardElevation(dpToPx(5));
 
         //load new color Layout
         //Header with the highlight color
         final RelativeLayout cardHeader = new RelativeLayout(getApplicationContext());
 
-        //Le damos parametros
+        //Bring parameters
         RelativeLayout.LayoutParams ParamsCabecera =
                 (new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,
                         RelativeLayout.LayoutParams.WRAP_CONTENT)
 
                 );
-        ParamsCabecera.height = 45;
+        ParamsCabecera.height = dpToPx(20);
 
         //Switch to merge color
         switch (fr.style) {
@@ -249,27 +253,27 @@ public class ShowNotesActivity extends AppCompatActivity {
             str = fr.filename.substring(nameIndex + 1);
         }
 
-        // Initialize a card Title (from file) in the CardView
+        //Initialize a card Title (from file) in the CardView
         TextView cardTitle = new TextView(mContext);
         cardTitle.setLayoutParams(params);
         cardTitle.setText(str);
         cardTitle.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
-        cardTitle.setPadding(50, 20, 0, 0);
+        cardTitle.setPadding(dpToPx(6), dpToPx(8), dpToPx(0), dpToPx(0));
         cardTitle.setTextColor(Color.BLACK);
-        // Put the TextView in CardView
+        //Put the TextView in CardView
         card.addView(cardTitle);
 
-        // Initialize a card date (from file) in the CardView
+        //Initialize a card date (from file) in the CardView
         SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy HH:mm");
         String newFormat = formatter.format(fr.date);
-
         TextView date = new TextView(mContext);
+
         date.setLayoutParams(params);
         date.setText(newFormat);
         date.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10);
-        date.setPadding(790, 30, 0, 0);
+        date.setPadding(dpToPx(241), dpToPx(10), dpToPx(0), dpToPx(0));
         date.setTextColor(Color.GRAY);
-        // Put the date in CardView
+        //Put the date in CardView
         card.addView(date);
 
 
@@ -283,10 +287,10 @@ public class ShowNotesActivity extends AppCompatActivity {
         Log.i("TAG", fr.filename + "*");
         final String textNote = readTextRangeFromFile(fr.start, fr.end, fr.filename.trim());
         selectedText.setText(textNote);
-        selectedText.setPadding(50, 100, 40, 70);
+        selectedText.setPadding(dpToPx(20), dpToPx(37), dpToPx(6), dpToPx(6));
         selectedText.setTextColor(Color.GRAY);
 
-        // Put the TextView in CardView
+        //Put the TextView in CardView
         card.addView(selectedText);
 
         //Set an own Id to every single cardView
@@ -309,20 +313,22 @@ public class ShowNotesActivity extends AppCompatActivity {
                 int message02 = (fr.start);
                 int message03 = (fr.end);
                 int message04 = (fr.color);
+                int message05 = (fr.id);
 
                 //checking
-                Log.i("TAG", "Nombre del archivo " + message.toString());
+                Log.i("TAG", "name " + message.toString());
                 //send
                 intent.putExtra(FileText, message);
                 intent.putExtra(StartPosition, message02);
                 intent.putExtra(EndtPosition, message03);
                 intent.putExtra(CardColor, message04);
+                intent.putExtra(CardId, message05);
                 startActivity(intent);
             }
 
         });
 
-        // Finally, add the CardView into the root layout
+        //Finally, add the CardView into the root layout
         lLinearLayout.addView(card);
 
         //Add the card into the array list and plus counter
@@ -337,7 +343,7 @@ public class ShowNotesActivity extends AppCompatActivity {
                 card.setVisibility(View.VISIBLE);
                 card.setAlpha(0.0f);
 
-                // Start the animation
+                //Start the animation
                 card.animate()
                         .translationX(card.getWidth())
                         .alpha(1.0f);
@@ -385,44 +391,57 @@ public class ShowNotesActivity extends AppCompatActivity {
         return true;
     }
 
-    //Clickable usages Export and Delete/-----IF YOU WANT TO PU ANY BUTTON OR USAGE MORE JUST PUT MORE CASES----
+    //Clickable usages Export, Back and Delete/
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.export:
-                try {
-                    //Toast.makeText(getApplicationContext(), "File Export Done!", Toast.LENGTH_SHORT).show();
-                    sendEmail(FileRef.exportRefs(references));
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (yellowCounter == 0 && blueCounter == 0 && greenCounter == 0) {
+                    Toast.makeText(getApplicationContext(), "No Notes to Export", Toast.LENGTH_SHORT).show();
+
+                } else {
+                    try {
+                        sendEmail(FileRef.exportRefs(references));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
+                break;
+            case android.R.id.home:
+                onBackPressed();
                 break;
 
             case R.id.delete:
 
-                new AlertDialog.Builder(this)
-                        .setMessage("Are you sure to delete permanently all the references?")
-                        .setCancelable(false)
-                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int id) {
+                if (yellowCounter == 0 && blueCounter == 0 && greenCounter == 0) {
+                    Toast.makeText(getApplicationContext(), "No notes to delete", Toast.LENGTH_SHORT).show();
 
-                lLinearLayout.removeAllViews();
-//                list.remove(list);
-                list.clear();
-                FileRef.deleteRefsFile(baseContext);
-                yellowButton.setText(String.valueOf(0));
-                greenButton.setText(String.valueOf(0));
-                blueButton.setText(String.valueOf(0));
-                                            yellowButton.setEnabled(false);
-                                            greenButton.setEnabled(false);
-                                            blueButton.setEnabled(false);
-                                            noNotes.setVisibility(View.VISIBLE);
-                                    }
-                        })
-                        .setNegativeButton("No", null)
-                        .show();
-                break;
+                } else {
+                    new AlertDialog.Builder(this)
+                            .setMessage("Are you sure to delete permanently all the references?")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                    lLinearLayout.removeAllViews();
+                                    list.clear();
+                                    FileRef.deleteAllRefsFromCurrentProject();
+                                    blueCounter=0;
+                                    greenCounter=0;
+                                    yellowCounter=0;
+                                    yellowButton.setText(String.valueOf(0));
+                                    greenButton.setText(String.valueOf(0));
+                                    blueButton.setText(String.valueOf(0));
+                                    yellowButton.setEnabled(false);
+                                    greenButton.setEnabled(false);
+                                    blueButton.setEnabled(false);
+                                    noNotes.setVisibility(View.VISIBLE);
+                                }
+                            })
+                            .setNegativeButton("No", null)
+                            .show();
+                    break;
+                }
         }
-
         return true;
     }
 
@@ -493,32 +512,50 @@ public class ShowNotesActivity extends AppCompatActivity {
     }
 
     //Export to a email
+    /**
+     * That method receives a HTML code and attach to a gmail.
+     * @param body
+     */
     private void sendEmail(String body) {
-        Log.d("eMail","Coming sendEmail");
-        if (body.equals("ERROR")){
+        Log.d("eMail", "Coming sendEmail");
+        if (body.equals("ERROR")) {
             Toast.makeText(mContext, "ERROR SENDING MESSAGE", Toast.LENGTH_SHORT).show();
-            Log.d("eMail","ERROR");
-        }else{
-            Log.d("eMail","Body different to ERROR");
-
-            String[] TO = {"david@dublindesignstudio.com"};
-            String[] CC = {"david@dublindesignstudio.com"};
+            Log.d("eMail", "ERROR");
+        } else {
+            Log.d("eMail", "Body different to ERROR");
+            String[] types = {
+                    "message/rfc822",
+                    "text/html",
+                    "text/plain"};
 
             Intent emailIntent = new Intent(Intent.ACTION_SEND);
             emailIntent.setData(Uri.parse("mailto:"));
-            emailIntent.setType("text/plain");
+            emailIntent.setType(types[1]);
+            File file = new File(Cfg.APP_DATA_FOLDER, "ScribaExportedNotes.html");
+            try {
+                FileWriter fw = new FileWriter(file);
+                Log.d("html", "Escribiendo fichero: "+body);
+                fw.write(body);
+                fw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-            Log.d("eMail","Saving the putExtras...");
+            if (!file.exists() || !file.canRead()) {
+                Toast.makeText(this, "Attachment Error", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+            Uri uri = Uri.parse("file://" + file);
+            emailIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
-            emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
-            emailIntent.putExtra(Intent.EXTRA_CC, CC);
+            Log.d("gMail", body);
+
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Exported Notes");
-            emailIntent.putExtra(Intent.EXTRA_TEXT, body);
 
             try {
-                Log.d("eMail","Starting the new activity.");
+                Log.d("eMail", "Starting the new activity.");
                 startActivity(Intent.createChooser(emailIntent, "Send mail..."));
-                finish();
 
             } catch (android.content.ActivityNotFoundException ex) {
                 Toast.makeText(this, "There is no email client installed.", Toast.LENGTH_SHORT).show();
@@ -527,4 +564,3 @@ public class ShowNotesActivity extends AppCompatActivity {
     }
 
 }
-
